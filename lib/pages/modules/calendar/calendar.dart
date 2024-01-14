@@ -3,6 +3,10 @@ import 'package:syncfusion_flutter_calendar/calendar.dart';
 import 'components/details.dart';
 import 'components/schedule.dart';
 class AppointmentCalendar extends StatelessWidget {
+  final int selectedServiceId;
+
+  AppointmentCalendar(this.selectedServiceId);
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,7 +61,7 @@ class AppointmentCalendar extends StatelessWidget {
               ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context); // Fechar o modal
-                  _navigateToAppointmentScheduleScreen(context, date);
+                  _navigateToAppointmentScheduleScreen(context, date, selectedServiceId);
                 },
                 child: Text('Agendar'),
               ),
@@ -77,11 +81,11 @@ class AppointmentCalendar extends StatelessWidget {
     );
   }
 
-  void _navigateToAppointmentScheduleScreen(BuildContext context, DateTime date) {
+  void _navigateToAppointmentScheduleScreen(BuildContext context, DateTime date, selectedServiceId) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => schedule(date: date),
+        builder: (context) => Schedule(date: date, serviceId: selectedServiceId),
       ),
     );
   }

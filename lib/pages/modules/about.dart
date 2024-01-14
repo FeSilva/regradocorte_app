@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:regradocorte_app/pages/modules/about/components/minicardslider.dart';
 import 'package:regradocorte_app/pages/modules/calendar/calendar.dart';
+class AboutMeWidget extends StatefulWidget {
+  @override
+  _AboutMeWidgetState createState() => _AboutMeWidgetState();
+}
 
-class AboutMeWidget extends StatelessWidget {
+class _AboutMeWidgetState extends State<AboutMeWidget> {
+  String selectedServiceTitle = '';
+  String selectedServiceDescription = '';
+  int selectedServiceId = 0;  // Corrigido: Use `int` em vez de `Int`
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -93,7 +101,15 @@ class AboutMeWidget extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 16.0),
-                    MiniCardList(),
+                    MiniCardListTabs(
+                      onCardClick: (String title, String description, int id) {
+                        setState(() {
+                          selectedServiceTitle = title;
+                          selectedServiceDescription = description;
+                          selectedServiceId = id;
+                        });
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -109,10 +125,17 @@ class AboutMeWidget extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => AppointmentCalendar()),
-          );
+          if (selectedServiceTitle.isNotEmpty && selectedServiceDescription.isNotEmpty) {
+           // String message = 'Realizar Agendamento para $selectedServiceTitle por $selectedServiceDescription id: $selectedServiceId';
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => AppointmentCalendar(selectedServiceId)),
+            );
+            // Adicione a lógica para o agendamento aqui
+          } else {
+            // Mensagem de erro ou tratamento adequado para nenhum serviço selecionado
+               
+          }
         },
         label: Text('Realizar Agendamento'),
         icon: Icon(Icons.calendar_month_outlined),
