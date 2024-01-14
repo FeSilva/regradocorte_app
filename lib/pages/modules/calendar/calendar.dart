@@ -53,14 +53,6 @@ class AppointmentCalendar extends StatelessWidget {
               ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context); // Fechar o modal
-                  _navigateToAppointmentDetailsScreen(context, date);
-                },
-                child: Text('Ver Agendamento'),
-              ),
-              SizedBox(height: 16.0),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context); // Fechar o modal
                   _navigateToAppointmentScheduleScreen(context, date, selectedServiceId);
                 },
                 child: Text('Agendar'),
@@ -72,14 +64,7 @@ class AppointmentCalendar extends StatelessWidget {
     );
   }
 
-  void _navigateToAppointmentDetailsScreen(BuildContext context, DateTime date) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => detailSchedule(date: date),
-      ),
-    );
-  }
+ 
 
   void _navigateToAppointmentScheduleScreen(BuildContext context, DateTime date, selectedServiceId) {
     Navigator.push(
