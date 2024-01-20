@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:regradocorte_app/pages/preregister.page.dart';
-import 'package:regradocorte_app/pages/register.page.dart';
 import 'package:regradocorte_app/pages/reset-password.dart';
 import 'package:regradocorte_app/pages/home.page.dart';
+import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatelessWidget {
+  TextEditingController emailController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -17,14 +21,14 @@ class LoginPage extends StatelessWidget {
               width: 300,
               height: 300,
               child: Container(
-              decoration: BoxDecoration(
+                decoration: BoxDecoration(
                   color: Color.fromARGB(255, 25, 25, 25),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Image.asset(
-                      'assets/images/logo_app.png', // Ajuste o caminho conforme necessário
+                      'assets/images/logo_app.png',
                       width: 300,
                       height: 300,
                     ),
@@ -33,6 +37,7 @@ class LoginPage extends StatelessWidget {
               ),
             ),
             TextFormField(
+              controller: emailController,
               keyboardType: TextInputType.emailAddress,
               decoration: InputDecoration(
                 filled: true,
@@ -51,6 +56,7 @@ class LoginPage extends StatelessWidget {
               height: 10,
             ),
             TextFormField(
+              controller: passwordController,
               keyboardType: TextInputType.text,
               obscureText: true,
               decoration: InputDecoration(
@@ -71,7 +77,6 @@ class LoginPage extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: TextButton(
                 child: Text(
-                  style: TextStyle(color: Colors.white),
                   "Recuperar token",
                   textAlign: TextAlign.right,
                 ),
@@ -117,12 +122,7 @@ class LoginPage extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => HomePage(),
-                      ),
-                    );
+                    _login(context); // Pass the context to the _login function
                   },
                 ),
               ),
@@ -134,13 +134,12 @@ class LoginPage extends StatelessWidget {
               height: 40,
               child: TextButton(
                 child: Text(
-                  style: TextStyle(color: Colors.white),
                   "Cadastre-se",
                   textAlign: TextAlign.center,
                 ),
                 onPressed: () {
                   Navigator.push(
-                    context,      
+                    context,
                     MaterialPageRoute(
                       builder: (context) => preRegister(),
                     ),
@@ -152,5 +151,65 @@ class LoginPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _login(BuildContext context) async {
+    try {
+      final dio = Dio();
+      dio.interceptors.add(InterceptorsWrapper(
+        onRequest: (options, handler) {
+          print('Request: ${options.method} ${options.uri}');
+          print('Request data: ${options.data}');
+          return handler.next(options);
+        },
+        onResponse: (response, handler) {
+          print('Response: ${response.statusCode}');
+          print('Response data: ${response.data}');
+          return handler.next(response);
+        },
+        onError: (DioError e, handler) {
+          print('Error: ${e.message}');
+          return handler.next(e);
+        },
+      ));
+
+      final response = await dio.post(
+        'http://192.168.41.150:8000/api/auth/login',
+        data: {
+          'email': emailController.text,
+          'password': passwordController.text,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final accessToken = response.data['accessToken'];
+
+        // Armazene o token de acesso usando shared_preferences.
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        prefs.setString('accessToken', accessToken);
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HomePage(),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Desculpe mas suas credenciais estão erradas.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (error) {
+      print('Error during registration: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Desculpe mas suas credenciais estão erradas.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

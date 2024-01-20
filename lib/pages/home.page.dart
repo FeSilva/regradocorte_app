@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:line_icons/line_icons.dart';
+import 'package:regradocorte_app/pages/perfil.page.dart';
 import 'package:regradocorte_app/pages/schedules.page.dart';
 import 'modules/newslide.dart';
 import 'modules/categorys.dart';
@@ -138,7 +139,7 @@ class _HomePageState extends State<HomePage> {
         color: Color.fromARGB(255, 33, 33, 33),
         child: ListView(
           children: <Widget>[
-            widgetSalonList(),
+            //widgetSalonList(),
             SizedBox(height: 10),
             ImageSliderCard(
               imageUrls: [
@@ -156,7 +157,7 @@ class _HomePageState extends State<HomePage> {
           color: const Color.fromARGB(255, 18, 18, 18),
           boxShadow: [
             BoxShadow(
-              blurRadius: 2,
+              blurRadius: 4,
               color: Colors.orange,
             )
           ],
@@ -199,6 +200,9 @@ class _HomePageState extends State<HomePage> {
                 GButton(
                   icon: LineIcons.user,
                   text: 'Profile',
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => ProfilePage()));
+                  }
                 ),
               ],
               selectedIndex: _selectedIndex,

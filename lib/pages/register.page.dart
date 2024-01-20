@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:regradocorte_app/pages/reset-password.dart';
+import 'package:http/http.dart' as http;
 import 'package:regradocorte_app/pages/home.page.dart';
+import 'package:dio/dio.dart';
+import 'package:regradocorte_app/pages/onboarding.page.dart';
 
-class RegisterPage extends StatelessWidget {
+class RegisterPage extends StatefulWidget {
+  @override
+  _RegisterPageState createState() => _RegisterPageState();
+}
+
+class _RegisterPageState extends State<RegisterPage> {
+  TextEditingController nameController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
+  TextEditingController confirmPasswordController = TextEditingController();
+
+  bool _passwordsMatch = true;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-         backgroundColor: Color.fromARGB(255, 25, 25, 25),
-        automaticallyImplyLeading: true,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          color: Colors.white,
-          onPressed: () => Navigator.pop(context, false),
-        ),
-      ),
       body: Container(
         padding: EdgeInsets.only(top: 60, left: 40, right: 40),
         color: Color.fromARGB(255, 25, 25, 25),
@@ -24,14 +29,14 @@ class RegisterPage extends StatelessWidget {
               width: 300,
               height: 300,
               child: Container(
-              decoration: BoxDecoration(
+                decoration: BoxDecoration(
                   color: Color.fromARGB(255, 25, 25, 25),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Image.asset(
-                      'assets/images/logo_app.png', // Ajuste o caminho conforme necessário
+                      'assets/images/logo_app.png',
                       width: 300,
                       height: 300,
                     ),
@@ -40,9 +45,29 @@ class RegisterPage extends StatelessWidget {
               ),
             ),
             TextFormField(
+              controller: nameController,
+              keyboardType: TextInputType.text,
+              decoration: InputDecoration(
+                labelText: 'Como podemos te chamar ?',
+                filled: true,
+                fillColor: Color.fromARGB(255, 25, 25, 25),
+                prefixIcon: Icon(Icons.supervised_user_circle_sharp),
+                labelStyle: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w400,
+                  fontSize: 15,
+                ),
+              ),
+              style: TextStyle(color: Colors.white, fontSize: 20),
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            TextFormField(
+              controller: emailController,
               keyboardType: TextInputType.emailAddress,
               decoration: InputDecoration(
-                labelText: 'E-mail',
+                labelText: 'Qual seu melhor email ?',
                 filled: true,
                 fillColor: Color.fromARGB(255, 25, 25, 25),
                 prefixIcon: Icon(Icons.mail),
@@ -58,6 +83,7 @@ class RegisterPage extends StatelessWidget {
               height: 10,
             ),
             TextFormField(
+              controller: passwordController,
               keyboardType: TextInputType.visiblePassword,
               obscureText: true,
               decoration: InputDecoration(
@@ -77,6 +103,7 @@ class RegisterPage extends StatelessWidget {
               height: 10,
             ),
             TextFormField(
+              controller: confirmPasswordController,
               keyboardType: TextInputType.visiblePassword,
               obscureText: true,
               decoration: InputDecoration(
@@ -92,6 +119,14 @@ class RegisterPage extends StatelessWidget {
               ),
               style: TextStyle(color: Colors.white, fontSize: 20),
             ),
+            SizedBox(
+              height: 10,
+            ),
+            if (!_passwordsMatch)
+              Text(
+                'Senhas não coincidem',
+                style: TextStyle(color: Colors.red),
+              ),
             SizedBox(
               height: 10,
             ),
@@ -124,12 +159,7 @@ class RegisterPage extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => HomePage(),
-                      ),
-                    );
+                    _registerUser();
                   },
                 ),
               ),
@@ -139,4 +169,88 @@ class RegisterPage extends StatelessWidget {
       ),
     );
   }
+
+  void _registerUser() async {
+    if (passwordController.text == confirmPasswordController.text) {
+      setState(() {
+        _passwordsMatch = true;
+      });
+
+      try {
+        final dio = Dio();
+        dio.interceptors.add(InterceptorsWrapper(
+          onRequest: (options, handler) {
+            print('Request: ${options.method} ${options.uri}');
+            print('Request data: ${options.data}');
+            return handler.next(options);
+          },
+          onResponse: (response, handler) {
+            print('Response: ${response.statusCode}');
+            print('Response data: ${response.data}');
+            return handler.next(response);
+          },
+          onError: (DioError e, handler) {
+            print('Error: ${e.message}');
+            return handler.next(e);
+          },
+        ));
+
+        final response = await http.post(
+          Uri.parse('http://192.168.41.150:8000/api/auth/register'),
+          body: {
+            'name': nameController.text,
+            'email': emailController.text,
+            'password': passwordController.text,
+            'c_password': confirmPasswordController.text,
+          },
+        );
+        if (response.statusCode == 201) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OnboardingPage(
+                pages: [
+                    OnboardingPageModel(
+                      title: 'Fast, Fluid and Secure',
+                      description:
+                          'Enjoy the best of the world in the palm of your hands.',
+                      image: 'assets/image0.png',
+                      bgColor: Colors.indigo,
+                    )
+                ]
+              ),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erro ao registrar usuário'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+
+        print('Response status: ${response.statusCode}');
+        print('Response data: ${response.body}');
+      } catch (error) {
+        print('Error during registration: $error');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao registrar usuário'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } else {
+      setState(() {
+        _passwordsMatch = false;
+      });
+    }
+  }
+}
+
+void main() {
+  runApp(MaterialApp(
+    home: RegisterPage(),
+  ));
 }
