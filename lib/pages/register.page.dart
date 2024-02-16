@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:regradocorte_app/pages/home.page.dart';
 import 'package:dio/dio.dart';
 import 'package:regradocorte_app/pages/onboarding.page.dart';
+import 'package:regradocorte_app/pages/singUp/singUp_service.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -177,7 +178,15 @@ class _RegisterPageState extends State<RegisterPage> {
       });
 
       try {
-        final dio = Dio();
+        SignUpService()
+          .signUpCustomer(emailController.text, passwordController.text, nameController.text);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ConcentricAnimationOnboarding()
+            ),
+          );
+        /*final dio = Dio();
         dio.interceptors.add(InterceptorsWrapper(
           onRequest: (options, handler) {
             print('Request: ${options.method} ${options.uri}');
@@ -196,7 +205,7 @@ class _RegisterPageState extends State<RegisterPage> {
         ));
 
         final response = await http.post(
-          Uri.parse('http://192.168.41.150:8000/api/auth/register'),
+          Uri.parse('http://192.168.0.3:8000/api/auth/register'),
           body: {
             'name': nameController.text,
             'email': emailController.text,
@@ -208,17 +217,7 @@ class _RegisterPageState extends State<RegisterPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => OnboardingPage(
-                pages: [
-                    OnboardingPageModel(
-                      title: 'Fast, Fluid and Secure',
-                      description:
-                          'Enjoy the best of the world in the palm of your hands.',
-                      image: 'assets/image0.png',
-                      bgColor: Colors.indigo,
-                    )
-                ]
-              ),
+              builder: (context) => ConcentricAnimationOnboarding()
             ),
           );
         } else {
@@ -231,7 +230,7 @@ class _RegisterPageState extends State<RegisterPage> {
         }
 
         print('Response status: ${response.statusCode}');
-        print('Response data: ${response.body}');
+        print('Response data: ${response.body}');*/
       } catch (error) {
         print('Error during registration: $error');
         ScaffoldMessenger.of(context).showSnackBar(

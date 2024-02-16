@@ -1,35 +1,47 @@
 import 'package:flutter/material.dart';
 import './about.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
+
 class MyCategoriesWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: Wrap(
-        spacing: 8.0,
-        runSpacing: 8.0,
-        children: [
-          MyCategoryCard(
-            title: 'Barber New Order',
-            icon: Icons.category,
-            color: Color.fromARGB(255, 42, 41, 41),
-          ),
-          MyCategoryCard(
-            title: 'Felipe Corte"s',
-            icon: Icons.category,
-            color: Color.fromARGB(255, 42, 41, 41),
-          ),
-          MyCategoryCard(
-            title: 'Barber New',
-            icon: Icons.category,
-            color: Color.fromARGB(255, 42, 41, 41),
-          ),
-          MyCategoryCard(
-            title: 'Corte Certo',
-            icon: Icons.category,
-            color: Color.fromARGB(255, 42, 41, 41),
-          ),
-        ],
+      child: FutureBuilder<QuerySnapshot>(
+        // Substitua 'shalon' pelo nome da sua coleção no Firestore
+        future: FirebaseFirestore.instance.collection('shalon').get(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return CircularProgressIndicator();
+          } else if (snapshot.hasError) {
+            return Text('Erro: ${snapshot.error}');
+          } else if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Text('Nenhum documento encontrado.');
+          } else {
+            List<Widget> categoryCards = [];
+
+            for (QueryDocumentSnapshot document in snapshot.data!.docs) {
+              Map<String, dynamic> data = document.data() as Map<String, dynamic>;
+              categoryCards.add(
+                MyCategoryCard(
+                  title: data['name'],
+                  uuid: data['ownerId'],
+                  // Adicione aqui outros campos que você deseja exibir
+                  icon: Icons.category,
+                  color: Color.fromARGB(255, 42, 41, 41),
+                ),
+              );
+            }
+
+            return Wrap(
+              spacing: 8.0,
+              runSpacing: 8.0,
+              children: categoryCards,
+            );
+          }
+        },
       ),
     );
   }
@@ -40,10 +52,12 @@ class MyCategoryCard extends StatelessWidget {
   final String title;
   final IconData icon;
   final Color color;
+  final String uuid;
 
   const MyCategoryCard({
     Key? key,
     required this.title,
+    required this.uuid,
     required this.icon,
     required this.color,
   }) : super(key: key);
@@ -54,7 +68,7 @@ class MyCategoryCard extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => AboutMeWidget()),
+          MaterialPageRoute(builder: (context) => AboutMeWidget(ownerShalonId: uuid,)),
         );
       },
       child: Container(
@@ -62,7 +76,7 @@ class MyCategoryCard extends StatelessWidget {
         margin: EdgeInsets.only(bottom: 8.0),
         child: Card(
           color: color,
-          elevation: 4.0,
+          //elevation: 4.0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8.0),
           ),

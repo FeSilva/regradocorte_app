@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:line_icons/line_icons.dart';
+import 'package:regradocorte_app/pages/dashboard.page.dart';
+import 'package:regradocorte_app/pages/feed.page.dart';
 import 'package:regradocorte_app/pages/perfil.page.dart';
 import 'package:regradocorte_app/pages/schedules.page.dart';
 import 'modules/newslide.dart';
 import 'modules/categorys.dart';
-import 'modules/calendar/calendar.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
+import 'teste.dart';
 
 void main() => runApp(MaterialApp(
       builder: (context, child) {
@@ -26,6 +28,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 0;
   String _userLocation = "Obtendo localização...";
   double lat = 0.0;
@@ -90,9 +93,12 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final bool isLargeScreen = width > 800;
     String dynamicTitle = _userLocation;
 
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         backgroundColor: Color.fromARGB(255, 25, 25, 25),
         actions: <Widget>[
@@ -128,18 +134,23 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          tooltip: 'Menu Icon',
-          color: Colors.orange,
-          onPressed: () {},
-        ),
+        leading: isLargeScreen
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.menu),
+                color: Colors.orange,
+                onPressed: () {
+                  print("Drawer icon clicked");
+                  _scaffoldKey.currentState?.openDrawer();
+                },
+              ),
       ),
+      drawer: isLargeScreen ? null : _drawer(),
+      endDrawer: isLargeScreen ? _drawer() : null,
       body: Container(
         color: Color.fromARGB(255, 33, 33, 33),
         child: ListView(
           children: <Widget>[
-            //widgetSalonList(),
             SizedBox(height: 10),
             ImageSliderCard(
               imageUrls: [
@@ -190,18 +201,38 @@ class _HomePageState extends State<HomePage> {
                     );
                   },
                 ),
+                /*GButton(
+                  icon: LineIcons.calendar,
+                  text: 'Dashboard',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => DashboardPage()),
+                    );
+                  },
+                ),
+                GButton(
+                  icon: LineIcons.fedex,
+                  text: 'Feed',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => FeedPage()),
+                    );
+                  },
+                ),*/
                 GButton(
                   icon: LineIcons.search,
                   text: 'Search',
                   onPressed: () {
-                    _navigateToSearchScreen();
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => ResponsiveNavBarPage()));
                   },
                 ),
                 GButton(
                   icon: LineIcons.user,
                   text: 'Profile',
                   onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => ProfilePage()));
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => Profile()));
                   }
                 ),
               ],
@@ -218,6 +249,22 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _drawer() {
+    print("Drawer method called");
+    return Drawer(
+      child: ListView(
+        children: _menuItems
+            .map((item) => ListTile(
+                  onTap: () {
+                    _scaffoldKey.currentState?.openEndDrawer();
+                  },
+                  title: Text(item),
+                ))
+            .toList(),
+      ),
+    );
+  }
+  
   Widget widgetSalonList() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -294,6 +341,15 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
+final List<String> _menuItems = <String>[
+  'About',
+  'Contact',
+  'Settings',
+  'Sign Out',
+];
+
+enum Menu { itemOne, itemTwo, itemThree }
 
 class SearchScreen extends StatelessWidget {
   TextEditingController _searchController = TextEditingController();

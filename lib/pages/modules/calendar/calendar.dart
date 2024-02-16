@@ -4,8 +4,10 @@ import 'components/details.dart';
 import 'components/schedule.dart';
 class AppointmentCalendar extends StatelessWidget {
   final int selectedServiceId;
+  final String ownerShalonId; //
 
-  AppointmentCalendar(this.selectedServiceId);
+
+  AppointmentCalendar(this.selectedServiceId, this.ownerShalonId);
   
   @override
   Widget build(BuildContext context) {
@@ -53,7 +55,7 @@ class AppointmentCalendar extends StatelessWidget {
               ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context); // Fechar o modal
-                  _navigateToAppointmentScheduleScreen(context, date, selectedServiceId);
+                  _navigateToAppointmentScheduleScreen(context, date, selectedServiceId, ownerShalonId);
                 },
                 child: Text('Agendar'),
               ),
@@ -66,11 +68,11 @@ class AppointmentCalendar extends StatelessWidget {
 
  
 
-  void _navigateToAppointmentScheduleScreen(BuildContext context, DateTime date, selectedServiceId) {
+  void _navigateToAppointmentScheduleScreen(BuildContext context, DateTime date, selectedServiceId, ownerShalonId) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => Schedule(date: date, serviceId: selectedServiceId),
+        builder: (context) => Schedule(date: date, ownerShalonId: ownerShalonId),
       ),
     );
   }

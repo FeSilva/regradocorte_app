@@ -1,9 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:regradocorte_app/pages/modules/about.dart';
 import 'package:regradocorte_app/pages/preregister.page.dart';
 import 'package:regradocorte_app/pages/reset-password.dart';
 import 'package:regradocorte_app/pages/home.page.dart';
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:regradocorte_app/pages/login/login_service.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? userEmail = prefs.getString('user_email');
+
+  runApp(MyApp(userEmail: userEmail));
+}
+
+class MyApp extends StatelessWidget {
+  final String? userEmail;
+
+  MyApp({this.userEmail});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      // ... outras configurações do aplicativo ...
+      home: userEmail != null ? HomePage() : LoginPage(),
+    );
+  }
+}
 
 class LoginPage extends StatelessWidget {
   TextEditingController emailController = TextEditingController();
@@ -63,7 +92,7 @@ class LoginPage extends StatelessWidget {
                 filled: true,
                 fillColor: Color.fromARGB(255, 25, 25, 25),
                 prefixIcon: Icon(Icons.password),
-                labelText: 'Secret',
+                labelText: 'Senha',
                 labelStyle: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w400,
@@ -77,7 +106,7 @@ class LoginPage extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: TextButton(
                 child: Text(
-                  "Recuperar token",
+                  "Recuperar senha",
                   textAlign: TextAlign.right,
                 ),
                 onPressed: () {
@@ -122,7 +151,7 @@ class LoginPage extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   onPressed: () {
-                    _login(context); // Pass the context to the _login function
+                    _doLogin(context);
                   },
                 ),
               ),
@@ -153,60 +182,81 @@ class LoginPage extends StatelessWidget {
     );
   }
 
-  void _login(BuildContext context) async {
-    try {
-      final dio = Dio();
-      dio.interceptors.add(InterceptorsWrapper(
-        onRequest: (options, handler) {
-          print('Request: ${options.method} ${options.uri}');
-          print('Request data: ${options.data}');
-          return handler.next(options);
-        },
-        onResponse: (response, handler) {
-          print('Response: ${response.statusCode}');
-          print('Response data: ${response.data}');
-          return handler.next(response);
-        },
-        onError: (DioError e, handler) {
-          print('Error: ${e.message}');
-          return handler.next(e);
-        },
-      ));
-
-      final response = await dio.post(
-        'http://192.168.41.150:8000/api/auth/login',
-        data: {
-          'email': emailController.text,
-          'password': passwordController.text,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final accessToken = response.data['accessToken'];
-
-        // Armazene o token de acesso usando shared_preferences.
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        prefs.setString('accessToken', accessToken);
-
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HomePage(),
-          ),
+  void _doLogin(BuildContext context) async {
+    if (emailController.text.isNotEmpty && passwordController.text.isNotEmpty) {
+      try {
+        UserCredential userCredential =
+            await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: emailController.text,
+          password: passwordController.text,
         );
-      } else {
+
+        // Obtenha a instância do Firestore
+        FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+        QuerySnapshot userSnapshot = await firestore
+        .collection('users')
+        .where('uuid', isEqualTo: userCredential.user!.uid)
+        .get();
+
+        // Verifique se algum documento foi encontrado
+        if (userSnapshot.docs.isNotEmpty) {
+          // Obtenha o primeiro documento encontrado (presumindo que haja apenas um com o mesmo UUID)
+          DocumentSnapshot userDocument = userSnapshot.docs.first;
+
+          // Agora você pode acessar os dados do usuário, por exemplo:
+          String userRole = userDocument['role'];
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+       
+          if (userRole == 'shalonAdmin') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AboutMeWidget(ownerShalonId: userCredential.user!.uid),
+              ),
+            );
+          }
+
+          if (userRole == 'customer') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => HomePage(),
+              ),
+            );
+          }
+
+          if (userRole == 'barber') {
+            /*Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => HomeBarberPage(),
+              ),
+            );*/
+          }
+          // Salve a informação do usuário logado nas SharedPreferences
+       
+        } else {
+          // Não foram encontradas referências para o usuário
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Usuário sem referências associadas.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Desculpe mas suas credenciais estão erradas.'),
+            content: Text('Login falhou. Verifique suas credenciais.'),
             backgroundColor: Colors.red,
           ),
         );
       }
-    } catch (error) {
-      print('Error during registration: $error');
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Desculpe mas suas credenciais estão erradas.'),
+          content: Text('Por favor, preencha os campos corretamente.'),
           backgroundColor: Colors.red,
         ),
       );

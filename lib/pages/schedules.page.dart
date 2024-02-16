@@ -1,6 +1,48 @@
-import 'package:flutter/material.dart';
+import 'dart:ffi';
 
-class SchedulePage extends StatelessWidget {
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:regradocorte_app/pages/home.page.dart';
+import 'package:intl/intl.dart';
+import 'dart:ui' as ui;
+
+
+class SchedulePage extends StatefulWidget {
+  @override
+  _SchedulePageState createState() => _SchedulePageState();
+}
+
+class _SchedulePageState extends State<SchedulePage> {
+  late Future<void> scheduleFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    scheduleFuture = getSchedulesUsers();
+  }
+
+  Future<List<DocumentSnapshot<Map<String, dynamic>>>> getSchedulesUsers() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    print('User UID: ${user?.uid}');
+
+    // Informações do usuário logado
+    DocumentSnapshot<Map<String, dynamic>> userData =
+        await FirebaseFirestore.instance.collection('users').doc(user?.uid).get();
+
+    CollectionReference<Map<String, dynamic>> scheduleCollectionRef =
+        FirebaseFirestore.instance.collection('users').doc(user?.uid).collection('schedule');
+
+    // Obtém os documentos da subcoleção "schedule"
+    QuerySnapshot<Map<String, dynamic>> scheduleSnapshot =
+        await scheduleCollectionRef.get();
+    
+    print('Schedule Documents: ${scheduleSnapshot.docs}');
+    return scheduleSnapshot.docs;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,13 +71,33 @@ class SchedulePage extends StatelessWidget {
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           color: Colors.orange,
-          onPressed: () => Navigator.pop(context, false),
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage())),
         ),
       ),
-      body: ListView.builder(
-        itemCount: 5, // Altere conforme o número desejado de cards
-        itemBuilder: (context, index) {
-          return CustomCardWidget();
+      body: FutureBuilder(
+        future: scheduleFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          } else if (snapshot.hasError) {
+            return Center(
+              child: Text('Erro ao carregar os agendamentos.'),
+            );
+          } else if (!snapshot.hasData || (snapshot.data as List).isEmpty) {
+            return Center(
+              child: Text('Nenhum agendamento encontrado.'),
+            );
+          } else {
+            List<DocumentSnapshot<Map<String, dynamic>>> schedules = (snapshot.data as List).cast<DocumentSnapshot<Map<String, dynamic>>>();
+            return ListView.builder(
+              itemCount: schedules.length,
+              itemBuilder: (context, index) {
+                return CustomCardWidget(data: schedules[index].data()!);
+              },
+            );
+          }
         },
       ),
     );
@@ -43,8 +105,23 @@ class SchedulePage extends StatelessWidget {
 }
 
 class CustomCardWidget extends StatelessWidget {
+  final Map<String, dynamic> data;
+
+  CustomCardWidget({required this.data});
+
+
   @override
   Widget build(BuildContext context) {
+    String shalonName = data['shalonName'] ?? 'Nome não disponível';
+    String horario = data['horario'];
+    Timestamp timestamp = data['date'];
+    DateTime scheduleDate = timestamp.toDate();
+    
+    // Formatando a data como string no formato desejado
+    String formattedDate = '${scheduleDate.day} de ${_getMonthName(scheduleDate.month)} de ${scheduleDate.year} ${horario}';
+
+    List<String> services = List<String>.from(data['services']);
+    String servicesString = services.join(', ');
     return Card(
       margin: EdgeInsets.all(16.0),
       color: Color.fromARGB(255, 50, 50, 50),
@@ -69,8 +146,8 @@ class CustomCardWidget extends StatelessWidget {
               child: Center(
                 child: Image.asset(
                   'assets/images/logo.jpg',
-                  height: 80.0,
-                  width: 80.0,
+                  height: 100.0,
+                  width: 100.0,
                   fit: BoxFit.cover,
                 ),
               ),
@@ -87,19 +164,36 @@ class CustomCardWidget extends StatelessWidget {
                 children: [
                   // Linha 1
                   Text(
-                    'Linha 1 da Coluna 2',
+                    shalonName,
                     style: TextStyle(
                       fontSize: 18.0,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 8.0),
+                  SizedBox(height: 1.0),
                   // Linha 2
                   Text(
-                    'Linha 2 da Coluna 2',
+                    formattedDate,
                     style: TextStyle(
-                      fontSize: 16.0,
+                      fontSize: 14.0,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  SizedBox(height: 1.0),
+                  // Linha 2
+                  Text(
+                    "Serviços: $servicesString",
+                    style: TextStyle(
+                      fontSize: 12.0,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  SizedBox(width: 0.0),
+                  Text(
+                    "Total: R\$35",
+                    style: TextStyle(
+                      fontSize: 12.0,
                       color: Colors.grey,
                     ),
                   ),
@@ -114,7 +208,7 @@ class CustomCardWidget extends StatelessWidget {
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          minimumSize: Size(0, 0),
+                          minimumSize:  ui.Size(0, 0),
                         ),
                         child: Text(
                           'Reagendar',
@@ -129,7 +223,7 @@ class CustomCardWidget extends StatelessWidget {
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          minimumSize: Size(0, 0),
+                          minimumSize:  ui.Size(0, 0),
                         ),
                         child: Text(
                           'Cancelar',
@@ -144,7 +238,7 @@ class CustomCardWidget extends StatelessWidget {
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          minimumSize: Size(0, 0),
+                          minimumSize: ui.Size(0, 0),
                         ),
                         child: Text(
                           'Confirmar',
@@ -161,8 +255,42 @@ class CustomCardWidget extends StatelessWidget {
       ),
     );
   }
-}
 
+  String _getMonthName(int month) {
+    switch (month) {
+      case 1:
+        return 'jan';
+      case 2:
+        return 'fev';
+      case 3:
+        return 'mar';
+      case 4:
+        return 'abr';
+      case 5:
+        return 'mai';
+      case 6:
+        return 'jun';
+      case 7:
+        return 'jul';
+      case 8:
+        return 'ago';
+      case 9:
+        return 'set';
+      case 10:
+        return 'out';
+      case 11:
+        return 'nov';
+      case 12:
+        return 'dez';
+      default:
+        return '';
+    }
+  }
+
+  String _addLeadingZero(int value) {
+    return value < 10 ? '0$value' : '$value';
+  }
+}
 
 void main() {
   runApp(MaterialApp(

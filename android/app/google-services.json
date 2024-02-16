@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "562146848418",
+    "firebase_url": "https://regradocorte-42198-default-rtdb.firebaseio.com",
+    "project_id": "regradocorte-42198",
+    "storage_bucket": "regradocorte-42198.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:562146848418:android:a06ac16320bcc5e9fbf1fb",
+        "android_client_info": {
+          "package_name": "com.example.regradocorte_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBl6C-fzUb5H4qZKLPRIEWRI5wWh_pLock"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:562146848418:android:bbb3bf38e7a79cc6fbf1fb",
+        "android_client_info": {
+          "package_name": "com.example.regradocorte_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBl6C-fzUb5H4qZKLPRIEWRI5wWh_pLock"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,160 +1,127 @@
 import 'package:flutter/material.dart';
+import 'package:concentric_transition/concentric_transition.dart';
 import 'package:regradocorte_app/pages/home.page.dart';
 
-class OnboardingPageModel {
-  final String title;
-  final String description;
-  final String image;
-  final Color bgColor;
-  final Color textColor;
-
-  OnboardingPageModel(
-      {required this.title,
-      required this.description,
-      required this.image,
-      this.bgColor = Colors.blue,
-      this.textColor = Colors.white});
+void main() {
+  runApp(MyApp());
 }
 
-class OnboardingPage extends StatefulWidget {
-  final List<OnboardingPageModel> pages;
-
-  const OnboardingPage({Key? key, required this.pages}) : super(key: key);
-
+class MyApp extends StatelessWidget {
   @override
-  _OnboardingPageState createState() => _OnboardingPageState();
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Onboarding App',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: ConcentricAnimationOnboarding(),
+    );
+  }
 }
 
-class _OnboardingPageState extends State<OnboardingPage> {
-  // Store the currently visible page
-  int _currentPage = 0;
-  // Define a controller for the pageview
-  final PageController _pageController = PageController(initialPage: 0);
+final pages = [
+  const PageData(
+    icon: Icons.celebration,
+    title: "Você escolhe a Barbearia",
+    bgColor: Color.fromARGB(255, 222, 127, 12),
+    textColor: Colors.white,
+  ),
+  const PageData(
+    icon: Icons.calendar_month,
+    title: "Agenda seu Horario",
+    bgColor: Color.fromARGB(255, 25, 25, 25),
+    textColor: Color(0xff3b1790),
+  ),
+  const PageData(
+    icon: Icons.money_off,
+    title: "E ainda recebe cashback",
+    bgColor: Color(0xffffffff),
+    textColor: Colors.orange,
+  ),
+];
+
+class ConcentricAnimationOnboarding extends StatelessWidget {
+  const ConcentricAnimationOnboarding({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
-      body: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        color: widget.pages[_currentPage].bgColor,
-        child: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                // Pageview to render each page
-                child: PageView.builder(
-                  controller: _pageController,
-                  itemCount: widget.pages.length,
-                  onPageChanged: (idx) {
-                    // Change current page when pageview changes
-                    setState(() {
-                      _currentPage = idx;
-                    });
-                  },
-                  itemBuilder: (context, idx) {
-                    final _item = widget.pages[idx];
-                    return Column(
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: Padding(
-                            padding: const EdgeInsets.all(32.0),
-                            child: Image.asset(
-                              _item.image,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                            flex: 1,
-                            child: Column(children: [
-                              Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Text(_item.title,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headline6
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: _item.textColor,
-                                        )),
-                              ),
-                              Container(
-                                constraints: BoxConstraints(maxWidth: 280),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 24.0, vertical: 8.0),
-                                child: Text(_item.description,
-                                    textAlign: TextAlign.center,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyText2
-                                        ?.copyWith(
-                                          color: _item.textColor,
-                                        )),
-                              )
-                            ]))
-                      ],
-                    );
-                  },
-                ),
-              ),
-
-              // Current page indicator
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: widget.pages
-                    .map((item) => AnimatedContainer(
-                          duration: const Duration(milliseconds: 250),
-                          width: _currentPage == widget.pages.indexOf(item)
-                              ? 20
-                              : 4,
-                          height: 4,
-                          margin: const EdgeInsets.all(2.0),
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10.0)),
-                        ))
-                    .toList(),
-              ),
-
-              // Bottom buttons
-              SizedBox(
-                height: 100,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    TextButton(
-                        onPressed: () {
-                           Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
-
-                        },
-                        child: Text(
-                          "Skip",
-                          style: TextStyle(color: Colors.white),
-                        )),
-                    TextButton(
-                      onPressed: () {
-                        if (_currentPage == widget.pages.length - 1) {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage()));
-                        } else {
-                          _pageController.animateToPage(_currentPage + 1,
-                              curve: Curves.easeInOutCubic,
-                              duration: const Duration(milliseconds: 250));
-                        }
-                      },
-                      child: Text(
-                        _currentPage == widget.pages.length - 1
-                            ? "Finish"
-                            : "Next",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            ],
+      body: ConcentricPageView(
+        colors: pages.map((p) => p.bgColor).toList(),
+        radius: screenWidth * 0.1,
+        nextButtonBuilder: (context) => Padding(
+          padding: const EdgeInsets.only(left: 3),
+          child: Icon(
+            Icons.navigate_next,
+            size: screenWidth * 0.08,
           ),
         ),
+        scaleFactor: 2,
+        itemBuilder: (index) {
+          final page = pages[index % pages.length];
+          return SafeArea(
+            child: _Page(page: page),
+          );
+        },
+        onFinish: () {
+          // Navegue para a tela inicial quando o onboarding for concluído
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomePage()),
+          );
+        },
       ),
     );
   }
 }
+
+class PageData {
+  final String? title;
+  final IconData? icon;
+  final Color bgColor;
+  final Color textColor;
+
+  const PageData({
+    this.title,
+    this.icon,
+    this.bgColor = Colors.white,
+    this.textColor = Colors.black,
+  });
+}
+
+class _Page extends StatelessWidget {
+  final PageData page;
+
+  const _Page({Key? key, required this.page}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16.0),
+          margin: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(shape: BoxShape.circle, color: page.textColor),
+          child: Icon(
+            page.icon,
+            size: screenHeight * 0.1,
+            color: page.bgColor,
+          ),
+        ),
+        Text(
+          page.title ?? "",
+          style: TextStyle(
+            color: page.textColor,
+            fontSize: screenHeight * 0.035,
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+}
+
